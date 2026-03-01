@@ -1,4 +1,4 @@
-# 🏗️ Cat Inspect AI: The Future of Industrial Intelligence
+# Cat Inspect AI: The Future of Industrial Intelligence
 
 **Static inspections are dead.** Cat Inspect AI isn't just a tool; it's a **sentient fleet-wide biological memory system** that transforms raw visual data into predictive lightning. 
 
@@ -6,7 +6,7 @@ Stop looking at PDFs. Start looking at the future.
 
 ---
 
-## ⚡ Why We’re Disrupting the Industry
+## Why We’re Disrupting the Industry
 
 - **Infinite Institutional Memory:** Our neural engine doesn't just "see" a crack; it cross-references 6 million annual data points to tell you exactly when that same hairline fracture crippled a fleet in Perth three years ago.
 - **Cognitive Regulatory Synthesis:** We've ingested the entire **MSHA 30 CFR** library. The AI doesn't just flag issues; it builds a legal defense for you in real-time.
@@ -15,7 +15,7 @@ Stop looking at PDFs. Start looking at the future.
 
 ---
 
-## 💎 The Tech Behind the Magic
+## The Tech Behind the Magic
 
 We aren't using yesterday's AI. Cat Inspect AI is powered by the world's most exclusive silicon:
 
@@ -25,7 +25,7 @@ We aren't using yesterday's AI. Cat Inspect AI is powered by the world's most ex
 
 ---
 
-## 🚀 Instant Deployment
+## Instant Deployment
 
 1. **Ignite the Core:** `docker compose up -d`
 2. **Authorize the God-Mode:** `export GEMINI_API_KEY='your-key'`
