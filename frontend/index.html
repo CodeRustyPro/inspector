@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat Inspect</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        
+        :root {
+            --cat-yellow: #FFCC00;
+            --cat-yellow-dark: #FFB300;
+            --cat-yellow-tint: #FFF9E5;
+            --cat-black: #111111;
+            --cat-dark-grey: #333333;
+            --cat-light-grey: #F5F5F5;
+            
+            --bg: #F8F9FA;
+            --surface: #FFFFFF;
+            --surface-2: #F4F6F8;
+            --border: #E0E4E8;
+            --border-strong: #C4CDD5;
+            --text-1: #111111;
+            --text-2: #454F5B;
+            --text-3: #919EAB;
+            
+            --red: #D72828;
+            --red-tint: #FBEAE9;
+            --red-border: #F4C2C2;
+            --amber: #B25D00;
+            --amber-tint: #FFF5EB;
+            --amber-border: #FFD2A6;
+            --green: #007A33;
+            --green-tint: #E6F4EA;
+            --green-border: #A3D9B5;
+            
+            --blue: #005A9C;
+            --blue-tint: #E6F0F6;
+            --blue-border: #B3D4E6;
+            --purple: #6D28D9;
+            --purple-tint: #F5F3FF;
+            --purple-border: #C4B5FD;
+            
+            --shadow-sm: 0 2px 4px rgba(17,17,17,0.04);
+            --shadow: 0 8px 16px rgba(17,17,17,0.08);
+            --shadow-lg: 0 16px 32px rgba(17,17,17,0.12);
+            --r: 8px;
+            --r-lg: 12px;
+            --r-xl: 20px;
+            --r-sm: 4px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text-1);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+            letter-spacing: 0.2px;
+        }
+
+        /* ── Animations ── */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { 0%{transform:scale(.9);opacity:0} 60%{transform:scale(1.02)} 100%{transform:scale(1);opacity:1} }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+        /* ── Accent Bar ── */
+        .top-bar { height: 6px; background: var(--cat-yellow); position: fixed; top: 0; left: 0; right: 0; z-index: 200; }
+
+        /* ── Header ── */
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            position: sticky; top: 6px; z-index: 100;
+            padding: 0 24px;
+            display: flex; align-items: center; justify-content: space-between;
+            height: 64px;
+            box-shadow: var(--shadow-sm);
+        }
+        .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        .logo-mark {
+            width: 36px; height: 36px; background: var(--cat-yellow);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 18px; color: var(--cat-black); flex-shrink: 0;
+            position: relative; overflow: hidden;
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+        }
+        /* Cat Triangle */
+        .logo-mark::before {
+            content: ''; position: absolute; bottom: 0; right: 0;
+            width: 0; height: 0;
+            border-style: solid;
+            border-width: 0 0 14px 14px;
+            border-color: transparent transparent var(--cat-black) transparent;
+        }
+        .logo-text { font-weight: 800; font-size: 19px; color: var(--cat-black); letter-spacing: -0.5px; text-transform: uppercase; }
+        .logo-text span { font-weight: 300; color: var(--text-3); margin-left: 6px; font-size: 16px; letter-spacing: 0; text-transform: none; }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .fleet-pill {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--surface); border: 1px solid var(--border);
+            padding: 6px 14px; border-radius: var(--r-xl);
+            font-size: 13px; font-weight: 600; color: var(--text-2);
+            box-shadow: var(--shadow-sm);
+        }
+        .fleet-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 2px var(--green-tint); }
+        .btn-ghost {
+            background: none; border: 1px solid var(--border); color: var(--text-2);
+            padding: 6px 14px; border-radius: var(--r); font-size: 13px; font-weight: 600;
+            cursor: pointer; font-family: inherit; transition: all .2s ease;
+        }
+        .btn-ghost:hover { border-color: var(--cat-black); color: var(--cat-black); background: var(--surface-2); }
+
+        /* ── Nav Tabs ── */
+        .nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; box-shadow: var(--shadow-sm); }
+        .nav-inner { max-width: 900px; margin: 0 auto; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+        .nav-inner::-webkit-scrollbar { display: none; }
+        .nav-tab {
+            padding: 16px 20px; font-size: 14px; font-weight: 600; color: var(--text-3);
+            border: none; background: none; cursor: pointer; font-family: inherit;
+            border-bottom: 3px solid transparent; margin-bottom: -1px;
+            white-space: nowrap; transition: all .2s ease; display: flex; align-items: center; gap: 8px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .nav-tab:hover { color: var(--cat-black); }
+        .nav-tab.active { color: var(--cat-black); border-bottom-color: var(--cat-yellow); }
+        .nav-tab svg { flex-shrink: 0; }
+
+        /* ── Page ── */
+        .page { max-width: 940px; margin: 0 auto; padding: 40px 20px 100px; }
+        .tab-pane { display: none; animation: fadeUp .3s ease-out; }
+        .tab-pane.active { display: block; }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--r-lg); padding: 24px; margin-bottom: 20px;
+            box-shadow: var(--shadow); transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover { box-shadow: var(--shadow-lg); }
+        .card-header {
+            font-size: 14px; font-weight: 700; color: var(--cat-black); text-transform: uppercase;
+            letter-spacing: 1px; margin-bottom: 20px; padding-bottom: 16px;
+            border-bottom: 2px solid var(--surface-2); display: flex; align-items: center; gap: 8px;
+        }
+
+        /* ── Form Elements ── */
+        label { display: block; font-size: 13px; font-weight: 700; color: var(--text-2); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .field { margin-bottom: 18px; }
+        select, input[type="number"], input[type="text"], textarea {
+            width: 100%; padding: 12px 16px;
+            background: var(--surface); border: 2px solid var(--border);
+            color: var(--text-1); border-radius: var(--r); font-size: 15px;
+            font-family: inherit; transition: all .2s ease; appearance: none;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+        }
+        select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23333' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; padding-right: 40px; cursor: pointer; }
+        select:focus, input:focus, textarea:focus { outline: none; border-color: var(--cat-yellow); box-shadow: 0 0 0 4px var(--cat-yellow-tint); background: #fff; }
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media(max-width:560px){ .row-2 { grid-template-columns: 1fr; } }
+        input[type="file"] { display: none; }
+        textarea { resize: vertical; min-height: 88px; line-height: 1.6; }
+
+        /* ── PM Chip ── */
+        .pm-chip {
+            display: flex; align-items: flex-start; gap: 12px;
+            padding: 16px; border-radius: var(--r); border: 1px solid;
+            font-size: 14px; margin-top: 16px; animation: fadeUp .3s ease;
+        }
+        .pm-chip .pm-icon { font-size: 18px; line-height: 1; flex-shrink: 0; margin-top: 2px; }
+        .pm-chip .pm-label { font-weight: 800; margin-bottom: 4px; color: var(--cat-black); }
+        .pm-chip .pm-detail { font-size: 13px; opacity: .9; line-height: 1.5; color: var(--text-1); }
+        .pm-normal { background: var(--blue-tint); border-color: var(--blue-border); }
+        .pm-approaching { background: var(--amber-tint); border-color: var(--amber-border); }
+        .pm-imminent { background: var(--red-tint); border-color: var(--red-border); }
+
+        /* ── Upload Zone ── */
+        .upload-zone {
+            border: 2px dashed var(--border-strong); background: var(--surface-2);
+            border-radius: var(--r-lg); padding: 48px 24px;
+            text-align: center; cursor: pointer; transition: all .2s ease;
+            position: relative; overflow: hidden; min-height: 240px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+        }
+        .upload-zone:hover { border-color: var(--cat-yellow-dark); background: var(--cat-yellow-tint); }
+        .upload-zone img { max-width: 100%; max-height: 400px; border-radius: var(--r); object-fit: contain; box-shadow: var(--shadow-sm); }
+        .upload-icon { color: var(--cat-black); transition: transform .2s ease; margin-bottom: 8px; }
+        .upload-zone:hover .upload-icon { transform: scale(1.1); color: var(--cat-yellow-dark); }
+        .upload-label { font-weight: 700; font-size: 16px; color: var(--cat-black); }
+        .upload-sub { font-size: 14px; color: var(--text-2); }
+        .upload-change { margin-top: 12px; background: none; border: none; color: var(--blue); font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: color 0.2s; }
+        .upload-change:hover { color: var(--cat-black); text-decoration: underline; }
+
+        /* ── Voice ── */
+        .voice-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .btn-voice {
+            display: flex; align-items: center; gap: 8px; padding: 10px 20px;
+            background: var(--surface); color: var(--red); border: 2px solid var(--red-border);
+            border-radius: var(--r-xl); font-size: 14px; font-weight: 700; cursor: pointer;
+            font-family: inherit; transition: all .2s ease; white-space: nowrap;
+        }
+        .btn-voice:hover { background: var(--red-tint); border-color: var(--red); }
+        .btn-voice.recording { background: var(--red); color: #fff; border-color: var(--red); animation: pulse 1.5s infinite; box-shadow: 0 0 0 4px var(--red-tint); }
+        .voice-status { font-size: 13px; color: var(--text-2); font-weight: 500; }
+
+        /* ── Primary Button ── */
+        .btn-primary {
+            width: 100%; padding: 18px; background: var(--cat-yellow); color: var(--cat-black);
+            border: 2px solid var(--cat-yellow); border-radius: var(--r-lg); font-size: 16px; font-weight: 800;
+            cursor: pointer; font-family: inherit; transition: all .2s ease;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            box-shadow: 0 4px 12px rgba(255,204,0,0.25);
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-primary:hover:not(:disabled) { background: var(--cat-yellow-dark); border-color: var(--cat-yellow-dark); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,204,0,0.3); }
+        .btn-primary:active:not(:disabled) { transform: translateY(0); box-shadow: 0 2px 8px rgba(255,204,0,0.25); }
+        .btn-primary:disabled { background: var(--surface-2); color: var(--text-3); border-color: var(--border); cursor: not-allowed; box-shadow: none; transform: none; }
+        
+        .btn-secondary {
+            padding: 12px 24px; background: var(--surface); border: 2px solid var(--border-strong);
+            color: var(--cat-black); border-radius: var(--r); font-size: 15px; font-weight: 700;
+            cursor: pointer; font-family: inherit; transition: all .2s ease;
+        }
+        .btn-secondary:hover:not(:disabled) { border-color: var(--cat-black); background: var(--surface-2); }
+        .btn-secondary:disabled { opacity: .5; cursor: not-allowed; }
+
+        /* ── Result: Rating Banner ── */
+        .result-banner {
+            border-radius: var(--r-lg); padding: 24px; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 20px;
+            animation: popIn .4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 2px solid;
+            box-shadow: var(--shadow);
+        }
+        .result-banner.RED { background: var(--surface); border-color: var(--red); }
+        .result-banner.YELLOW { background: var(--surface); border-color: var(--amber); }
+        .result-banner.GREEN { background: var(--surface); border-color: var(--green); }
+        .result-rating-dot {
+            width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; color: #fff; box-shadow: var(--shadow-sm);
+        }
+        .RED .result-rating-dot { background: var(--red); }
+        .YELLOW .result-rating-dot { background: var(--amber); }
+        .GREEN .result-rating-dot { background: var(--green); }
+        .result-rating-info { flex: 1; min-width: 0; }
+        .result-rating-label { font-size: 22px; font-weight: 900; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.5px; }
+        .RED .result-rating-label { color: var(--red); }
+        .YELLOW .result-rating-label { color: var(--amber); }
+        .GREEN .result-rating-label { color: var(--green); }
+        .result-rating-sub { font-size: 14px; color: var(--text-2); margin-top: 4px; font-weight: 500; }
+        .result-severity-badge {
+            font-size: 14px; font-weight: 800; padding: 6px 16px;
+            border-radius: var(--r-xl); border: 2px solid; flex-shrink: 0;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .RED .result-severity-badge { color: var(--red); border-color: var(--red); background: var(--red-tint); }
+        .YELLOW .result-severity-badge { color: var(--amber); border-color: var(--amber); background: var(--amber-tint); }
+        .GREEN .result-severity-badge { color: var(--green); border-color: var(--green); background: var(--green-tint); }
+
+        /* ── Result Sections ── */
+        .result-section { margin-bottom: 20px; }
+        .result-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-3); margin-bottom: 8px; display: block; }
+        .result-text { font-size: 15px; line-height: 1.7; color: var(--cat-black); font-weight: 400; }
+        .result-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        @media(max-width: 580px) { .result-row { grid-template-columns: 1fr; } }
+
+        /* ── Cost Chip ── */
+        .cost-chip {
+            display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px;
+            background: var(--surface); border: 2px solid var(--cat-black);
+            color: var(--cat-black); border-radius: var(--r-xl); font-weight: 800; font-size: 15px;
+            box-shadow: 2px 2px 0 var(--border-strong);
+        }
+
+        /* ── Compliance Card ── */
+        .compliance-card {
+            background: var(--surface); border: 2px solid var(--purple);
+            border-radius: var(--r-lg); padding: 20px; margin-bottom: 20px;
+            animation: fadeUp .3s ease; box-shadow: 0 4px 12px rgba(109,40,217,0.1);
+            position: relative; overflow: hidden;
+        }
+        .compliance-card::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 6px; background: var(--purple); }
+        .compliance-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--purple); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .compliance-citation { font-size: 15px; font-weight: 800; color: var(--cat-black); margin-bottom: 6px; font-family: monospace; }
+        .compliance-action { font-size: 14px; color: var(--text-2); line-height: 1.6; }
+
+        /* ── Alert Banners ── */
+        .alert {
+            border-radius: var(--r-lg); padding: 16px 20px; margin-bottom: 16px;
+            border: 2px solid; font-size: 14px; animation: fadeUp .3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+        .alert strong { display: flex; align-items: center; gap: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; font-weight: 800; }
+        .alert-escalation { background: var(--surface); border-color: var(--red); }
+        .alert-escalation strong { color: var(--red); }
+        .alert-escalation .alert-body { color: var(--text-1); font-weight: 500; }
+        .alert-trend { background: var(--surface); border-color: var(--green); }
+        .alert-trend strong { color: var(--green); }
+        .alert-trend .alert-body { color: var(--text-1); font-weight: 500; }
+        .alert-maint { background: var(--surface); border-color: var(--blue); }
+        .alert-maint strong { color: var(--blue); }
+        .alert-maint .alert-body { color: var(--text-1); }
+
+        /* ── Fleet Pattern Note ── */
+        .fleet-note {
+            background: var(--surface); border: 2px solid var(--border); border-left: 4px solid var(--amber);
+            border-radius: var(--r); padding: 18px 20px; margin-bottom: 20px;
+            animation: fadeUp .35s ease; box-shadow: var(--shadow-sm);
+        }
+        .fleet-note-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--amber); margin-bottom: 6px; }
+        .fleet-note-text { font-size: 14px; color: var(--cat-black); line-height: 1.6; font-style: italic; }
+
+        /* ── Similar Findings ── */
+        .similar-header {
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: 14px; font-weight: 800; color: var(--cat-black); text-transform: uppercase;
+            letter-spacing: 1px; padding-bottom: 14px; border-bottom: 2px solid var(--border);
+            margin-bottom: 16px;
+        }
+        .similar-count { background: var(--cat-black); color: #fff; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: var(--r-xl); }
+        .similar-card {
+            padding: 16px 20px; border: 1px solid var(--border); border-radius: var(--r-lg);
+            margin-bottom: 12px; background: var(--surface); transition: all .2s ease;
+            box-shadow: var(--shadow-sm); position: relative; overflow: hidden;
+        }
+        .similar-card:hover { border-color: var(--border-strong); transform: translateX(2px); box-shadow: var(--shadow); }
+        .similar-card.this-machine { border-left: 4px solid var(--cat-yellow); }
+        .similar-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .similar-machine { font-size: 14px; font-weight: 800; color: var(--cat-black); display: flex; align-items: center; gap: 10px; }
+        .this-machine-tag { font-size: 11px; font-weight: 800; background: var(--cat-yellow); color: var(--cat-black); padding: 2px 8px; border-radius: var(--r-sm); letter-spacing: 0.5px; text-transform: uppercase; }
+        .similar-finding { font-size: 14px; color: var(--text-2); line-height: 1.6; margin-bottom: 8px; }
+        .similar-outcome { font-size: 13px; color: var(--text-3); font-weight: 500; }
+        .rating-dot-sm { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+        .rating-dot-sm.RED { background: var(--red); box-shadow: 0 0 0 2px var(--red-tint); }
+        .rating-dot-sm.YELLOW { background: var(--amber); box-shadow: 0 0 0 2px var(--amber-tint); }
+        .rating-dot-sm.GREEN { background: var(--green); box-shadow: 0 0 0 2px var(--green-tint); }
+
+        /* ── Escalation Timeline ── */
+        .esc-timeline { display: flex; align-items: center; gap: 0; margin: 16px 0; overflow-x: auto; padding: 10px 0; }
+        .esc-step { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 80px; position: relative; }
+        .esc-step:not(:last-child)::after { content: ''; position: absolute; top: 8px; left: 50%; width: 100%; height: 3px; background: var(--border); z-index: 0; }
+        .esc-dot { width: 18px; height: 18px; border-radius: 50%; z-index: 1; margin-bottom: 8px; flex-shrink: 0; border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--border-strong); }
+        .esc-dot.RED { background: var(--red); box-shadow: 0 0 0 2px var(--red); }
+        .esc-dot.YELLOW { background: var(--amber); box-shadow: 0 0 0 2px var(--amber); }
+        .esc-dot.GREEN { background: var(--green); box-shadow: 0 0 0 2px var(--green); }
+        .esc-text { font-size: 11px; color: var(--text-2); font-weight: 700; text-align: center; line-height: 1.4; }
+
+        /* ── Memory Store Bar ── */
+        .store-bar { text-align: center; padding: 12px 16px; background: var(--surface); border: 2px solid var(--green); border-radius: var(--r-lg); font-size: 14px; font-weight: 700; color: var(--green); margin-top: 12px; box-shadow: 0 4px 12px rgba(0,122,51,0.1); }
+
+        /* ── Spinner ── */
+        .spinner-wrap { padding: 48px 0; text-align: center; }
+        .spinner { width: 44px; height: 44px; border: 4px solid var(--border); border-top-color: var(--cat-yellow-dark); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 16px; }
+        .spinner-label { font-size: 15px; font-weight: 600; color: var(--cat-black); letter-spacing: 0.5px; }
+
+        /* ── Invalid Image ── */
+        .invalid-card { padding: 40px 24px; text-align: center; border: 2px solid var(--red); background: var(--surface); border-radius: var(--r-lg); animation: fadeUp .3s ease; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+        .invalid-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px; background: var(--red); }
+        .invalid-icon { font-size: 44px; margin-bottom: 16px; }
+        .invalid-title { font-size: 20px; font-weight: 900; color: var(--red); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .invalid-body { font-size: 15px; color: var(--text-1); line-height: 1.6; }
+
+        /* ── Walkaround ── */
+        .wa-progress { display: flex; align-items: center; gap: 16px; padding: 20px 24px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); margin-bottom: 20px; box-shadow: var(--shadow-sm); }
+        .wa-label { font-weight: 800; font-size: 15px; white-space: nowrap; text-transform: uppercase; letter-spacing: 1px; }
+        .wa-bar { flex: 1; height: 10px; background: var(--surface-2); border-radius: 5px; overflow: hidden; border: 1px solid var(--border); }
+        .wa-fill { height: 100%; background: var(--cat-yellow); width: 0%; border-radius: 5px; transition: width .5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .wa-count { font-weight: 800; font-size: 15px; color: var(--cat-black); white-space: nowrap; min-width: 44px; text-align: right; }
+        
+        .checklist-group { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; margin-bottom: 16px; box-shadow: var(--shadow-sm); transition: box-shadow 0.2s; }
+        .checklist-group:hover { box-shadow: var(--shadow); }
+        .checklist-hdr { padding: 18px 24px; font-weight: 800; font-size: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background .2s ease; border: none; width: 100%; text-align: left; font-family: inherit; color: var(--cat-black); background: var(--surface); text-transform: uppercase; letter-spacing: 0.5px; }
+        .checklist-hdr:hover { background: var(--surface-2); }
+        .chevron { transition: transform .3s ease; color: var(--text-3); }
+        .checklist-items { display: none; border-top: 1px solid var(--border); background: #fafafa; }
+        .checklist-items.open { display: block; animation: fadeUp .2s ease; }
+        .check-row { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; transition: background 0.2s; }
+        .check-row:hover { background: var(--surface); }
+        .check-row:last-child { border-bottom: none; }
+        .status-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--surface); border: 3px solid var(--border-strong); flex-shrink: 0; transition: all .3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .status-dot.GREEN { background: var(--green); border-color: var(--green); box-shadow: 0 0 0 3px var(--green-tint); }
+        .status-dot.YELLOW { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 0 3px var(--amber-tint); }
+        .status-dot.RED { background: var(--red); border-color: var(--red); box-shadow: 0 0 0 3px var(--red-tint); }
+        .check-info { flex: 1; }
+        .check-title { font-weight: 700; font-size: 15px; color: var(--cat-black); }
+        .check-desc { font-size: 13px; color: var(--text-2); margin-top: 4px; line-height: 1.4; }
+        .btn-check { padding: 10px 20px; background: var(--surface); border: 2px solid var(--border-strong); border-radius: var(--r-sm); font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; font-family: inherit; transition: all .2s ease; text-transform: uppercase; letter-spacing: 0.5px; }
+        .btn-check:hover { border-color: var(--cat-black); background: var(--cat-black); color: #fff; }
+        .btn-check.done { background: var(--surface); border-color: var(--border); color: var(--text-3); }
+
+        /* ── Modal ── */
+        .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(17,17,17,0.7); z-index: 500; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+        .modal-backdrop.open { display: flex; }
+        .modal { width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; background: var(--surface); border-radius: var(--r-xl); box-shadow: var(--shadow-lg); padding: 32px; position: relative; animation: popIn .3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .modal-close { position: absolute; right: 20px; top: 20px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 50%; width: 36px; height: 36px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-2); transition: all .2s ease; }
+        .modal-close:hover { background: var(--cat-black); border-color: var(--cat-black); color: #fff; transform: rotate(90deg); }
+
+        /* ── OCR ── */
+        .ocr-row { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 18px; background: var(--surface); border-radius: var(--r-sm); margin-bottom: 8px; font-size: 15px; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+        .ocr-key { font-size: 13px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.5px; }
+        .ocr-val { font-weight: 800; color: var(--cat-black); }
+
+        /* ── Report ── */
+        .finding-row { display: flex; align-items: flex-start; gap: 16px; padding: 16px 20px; border: 1px solid var(--border); border-radius: var(--r-lg); margin-bottom: 12px; background: var(--surface); animation: fadeUp .2s ease; box-shadow: var(--shadow-sm); }
+        .f-component { font-weight: 800; font-size: 15px; color: var(--cat-black); }
+        .f-detail { font-size: 14px; color: var(--text-2); margin-top: 4px; line-height: 1.5; }
+        .btn-row { display: flex; gap: 16px; margin-top: 24px; }
+        .btn-row .btn-primary { flex: 1; }
+        .btn-row .btn-secondary { flex: 1; }
+        #report-output { line-height: 1.7; }
+        #report-output h2 { margin-top: 28px; margin-bottom: 16px; font-size: 20px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+        #report-output h3 { margin-top: 24px; margin-bottom: 12px; font-size: 16px; font-weight: 800; }
+        #report-output p { margin-bottom: 12px; color: var(--cat-dark-grey); }
+
+        /* ── Print ── */
+        @media print {
+            .top-bar, header, .nav, .btn-primary, .btn-secondary, .btn-ghost, .nav-tab { display: none !important; }
+            body { background: #fff; }
+            .page { padding: 0; max-width: 100%; }
+            .card { border: none; box-shadow: none; padding: 0; }
+        }
+    </style>
+</head>
+<body>
+<div class="top-bar"></div>
+
+<header>
+    <div class="logo">
+        <div class="logo-mark">C</div>
+        <div class="logo-text">Cat Inspect <span>AI</span></div>
+    </div>
+    <div class="header-right">
+        <div class="fleet-pill">
+            <span class="dot"></span>
+            <span id="fleet-count">— inspections</span>
+        </div>
+        <button class="btn-ghost" onclick="resetMemory()">Clear session</button>
+    </div>
+</header>
+
+<nav class="nav">
+    <div class="nav-inner">
+        <button class="nav-tab active" data-tab="walkaround">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+            Walkaround
+        </button>
+        <button class="nav-tab" data-tab="inspect">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            Inspect
+        </button>
+        <button class="nav-tab" data-tab="parts">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            Parts
+        </button>
+        <button class="nav-tab" data-tab="ocr">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            Nameplate
+        </button>
+        <button class="nav-tab" data-tab="report">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Report
+        </button>
+    </div>
+</nav>
+
+<div class="page">
+
+    <!-- ═══════════════════════════════════ -->
+    <!-- INSPECT TAB                         -->
+    <!-- ═══════════════════════════════════ -->
+    <div id="tab-inspect" class="tab-pane">
+
+        <div class="card">
+            <div class="card-header">Equipment</div>
+            <div class="row-2">
+                <div class="field">
+                    <label>Asset Model</label>
+                    <select id="equipment-model">
+                        <option value="CAT 320">CAT 320 Excavator</option>
+                        <option value="CAT 336">CAT 336 Excavator</option>
+                        <option value="CAT 349">CAT 349 Excavator</option>
+                        <option value="CAT 950">CAT 950 Wheel Loader</option>
+                        <option value="CAT 966">CAT 966 Wheel Loader</option>
+                        <option value="CAT 980">CAT 980 Wheel Loader</option>
+                        <option value="CAT D6">CAT D6 Dozer</option>
+                        <option value="CAT D8">CAT D8 Dozer</option>
+                        <option value="CAT 740">CAT 740 Articulated Truck</option>
+                        <option value="CAT 777">CAT 777 Off-Highway Truck</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Service Hours</label>
+                    <input type="number" id="equipment-hours" value="2450" min="0" max="99999">
+                </div>
+            </div>
+            <div id="maint-preview"></div>
+            <div class="field" style="margin-top:14px;margin-bottom:0">
+                <label>Component</label>
+                <select id="component">
+                    <option value="general">Auto-detect from photo</option>
+                    <optgroup label="Hydraulic System">
+                        <option value="hydraulic_hose">Hydraulic Hose</option>
+                        <option value="hydraulic_cylinder">Hydraulic Cylinder</option>
+                        <option value="hydraulic_pump">Hydraulic Pump</option>
+                        <option value="hydraulic_oil">Hydraulic Oil Level</option>
+                    </optgroup>
+                    <optgroup label="Undercarriage">
+                        <option value="track_shoe">Track Shoe</option>
+                        <option value="track_tension">Track Tension</option>
+                        <option value="track_roller">Track Roller</option>
+                        <option value="final_drive">Final Drive</option>
+                    </optgroup>
+                    <optgroup label="Structural">
+                        <option value="boom_pin">Boom Pin</option>
+                        <option value="boom_structure">Boom Structure</option>
+                        <option value="stick_pin">Stick Pin</option>
+                        <option value="bucket_teeth">Bucket Teeth</option>
+                        <option value="bucket_edge">Bucket Cutting Edge</option>
+                        <option value="swing_bearing">Swing Bearing</option>
+                    </optgroup>
+                    <optgroup label="Engine & Fluids">
+                        <option value="engine_oil">Engine Oil</option>
+                        <option value="coolant_system">Coolant System</option>
+                        <option value="belt">Belt</option>
+                        <option value="air_filter">Air Filter</option>
+                        <option value="fuel_filter">Fuel Filter</option>
+                        <option value="turbocharger">Turbocharger</option>
+                        <option value="transmission">Transmission</option>
+                    </optgroup>
+                    <optgroup label="Safety Items">
+                        <option value="lights">Lights</option>
+                        <option value="backup_alarm">Backup Alarm</option>
+                        <option value="fire_extinguisher">Fire Extinguisher</option>
+                        <option value="brakes">Brakes</option>
+                        <option value="seatbelt">Seatbelt / ROPS</option>
+                        <option value="cab_glass">Cab Glass</option>
+                    </optgroup>
+                    <optgroup label="Other">
+                        <option value="tire">Tire</option>
+                        <option value="alternator">Alternator</option>
+                        <option value="starter_motor">Starter Motor</option>
+                    </optgroup>
+                </select>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Photo</div>
+            <div class="upload-zone" id="photo-area" onclick="document.getElementById('photo-input').click()">
+                <div id="photo-placeholder">
+                    <svg class="upload-icon" width="44" height="44" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <div class="upload-label">Tap to capture photo</div>
+                    <div class="upload-sub">or drag & drop — JPEG, PNG, HEIC</div>
+                </div>
+                <img id="photo-preview" style="display:none">
+            </div>
+            <input type="file" id="photo-input" accept="image/*" capture="environment">
+            <div id="photo-change-hint" style="display:none;text-align:center;margin-top:8px">
+                <button class="upload-change" onclick="document.getElementById('photo-input').click()">Replace photo</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Voice Note <span style="font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-3)">— optional</span></div>
+            <div class="voice-row">
+                <button class="btn-voice" id="voice-btn" onclick="toggleVoice('voice-btn','voice-transcript','voice-status')">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                    Record
+                </button>
+                <span id="voice-status" class="voice-status"></span>
+            </div>
+            <textarea id="voice-transcript" placeholder="Describe what you see — voice transcript appears here, or type manually…"></textarea>
+        </div>
+
+        <button class="btn-primary" id="submit-btn" onclick="submitInspection()" disabled>
+            <svg width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            Analyze Inspection
+        </button>
+
+        <div id="results-area" style="display:none">
+            <div id="alerts-area"></div>
+            <div id="result-hero"></div>
+            <div id="result-body-card"></div>
+            <div id="compliance-area"></div>
+            <div id="fleet-note-area"></div>
+            <div id="similar-area"></div>
+            <div id="store-bar-area"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════ -->
+    <!-- WALKAROUND TAB                      -->
+    <!-- ═══════════════════════════════════ -->
+    <div id="tab-walkaround" class="tab-pane active">
+        <div class="wa-progress">
+            <span class="wa-label">Progress</span>
+            <div class="wa-bar"><div class="wa-fill" id="wa-fill"></div></div>
+            <span class="wa-count" id="wa-count">0/12</span>
+        </div>
+
+        <div class="checklist-group">
+            <button class="checklist-hdr" onclick="toggleChecklist(this)">
+                <span>Safety Equipment</span>
+                <svg class="chevron" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div class="checklist-items open">
+                <div class="check-row"><div class="status-dot" id="dot-fire_extinguisher"></div><div class="check-info"><div class="check-title">Fire Extinguisher</div><div class="check-desc">Gauge, inspection tag date, condition, bracket</div></div><button class="btn-check" id="ckbtn-fire_extinguisher" onclick="openWAModal('fire_extinguisher','Fire Extinguisher')">Inspect</button></div>
+                <div class="check-row"><div class="status-dot" id="dot-backup_alarm"></div><div class="check-info"><div class="check-title">Backup Alarm</div><div class="check-desc">Audible alert functional, housing intact</div></div><button class="btn-check" id="ckbtn-backup_alarm" onclick="openWAModal('backup_alarm','Backup Alarm')">Inspect</button></div>
+                <div class="check-row"><div class="status-dot" id="dot-lights"></div><div class="check-info"><div class="check-title">Lights & Work Lamps</div><div class="check-desc">All lenses intact, functional, no moisture</div></div><button class="btn-check" id="ckbtn-lights" onclick="openWAModal('lights','Lights')">Inspect</button></div>
+                <div class="check-row"><div class="status-dot" id="dot-seatbelt"></div><div class="check-info"><div class="check-title">Seatbelt / ROPS</div><div class="check-desc">Belt condition, latch, roll-over structure</div></div><button class="btn-check" id="ckbtn-seatbelt" onclick="openWAModal('seatbelt','Seatbelt / ROPS')">Inspect</button></div>
+            </div>
+        </div>
+
+        <div class="checklist-group">
+            <button class="checklist-hdr" onclick="toggleChecklist(this)">
+                <span>Hydraulic System</span>
+                <svg class="chevron" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div class="checklist-items">
+                <div class="check-row"><div class="status-dot" id="dot-hydraulic_hose"></div><div class="check-info"><div class="check-title">Boom Hoses</div><div class="check-desc">Leaks, abrasion, weeping, UV cracking</div></div><button class="btn-check" id="ckbtn-hydraulic_hose" onclick="openWAModal('hydraulic_hose','Boom Hoses')">Inspect</button></div>
+                <div class="check-row"><div class="status-dot" id="dot-hydraulic_cylinder"></div><div class="check-info"><div class="check-title">Cylinders</div><div class="check-desc">Rod scoring, wiper seals, end cap condition</div></div><button class="btn-check" id="ckbtn-hydraulic_cylinder" onclick="openWAModal('hydraulic_cylinder','Cylinders')">Inspect</button></div>
+                <div class="check-row"><div class="status-dot" id="dot-hydraulic_oil"></div><div class="check-info"><div class="check-title">Hydraulic Oil Level</div><div class="check-desc">Sight glass level, oil color and condition</div></div><button class="btn-check" id="ckbtn-hydraulic_oil" onclick="openWAModal('hydraulic_oil','Hydraulic Oil Level')">Inspect</button></div>
+            </div>
+        </div>
+
+        <div class="checklist-group">
+            <button class="checklist-hdr" onclick="toggleChecklist(this)">
+                <span>Undercarriage</span>
+                <svg class="chevron" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div class="checklist-items">
+                <div class="check-row"><div class="status-dot" id="dot-track_tension"></div><div class="check-info"><div class="check-title">Track Tension</div><div class="check-desc">1–2" sag at midspan, equal both sides</div></div><button class="btn-check" id="ckbtn-track_tension" onclick="openWAModal('track_tension','Track Tension')">Inspect</button></div>
+                <div class="check-row"><div class="status-dot" id="dot-track_shoe"></div><div class="check-info"><div class="check-title">Track Shoes</div><div class="check-desc">Bent grousers, wear height vs 20mm minimum</div></div><button class="btn-check" id="ckbtn-track_shoe" onclick="openWAModal('track_shoe','Track Shoes')">Inspect</button></div>
+                <div class="check-row"><div class="status-dot" id="dot-track_roller"></div><div class="check-info"><div class="check-title">Track Rollers</div><div class="check-desc">Face seal leaks, bearing play, debris packing</div></div><button class="btn-check" id="ckbtn-track_roller" onclick="openWAModal('track_roller','Track Rollers')">Inspect</button></div>
+            </div>
+        </div>
+
+        <div class="checklist-group">
+            <button class="checklist-hdr" onclick="toggleChecklist(this)">
+                <span>Engine & Fluids</span>
+                <svg class="chevron" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div class="checklist-items">
+                <div class="check-row"><div class="status-dot" id="dot-engine_oil"></div><div class="check-info"><div class="check-title">Engine Oil</div><div class="check-desc">Dipstick level, color, contamination check</div></div><button class="btn-check" id="ckbtn-engine_oil" onclick="openWAModal('engine_oil','Engine Oil')">Inspect</button></div>
+                <div class="check-row"><div class="status-dot" id="dot-coolant_system"></div><div class="check-info"><div class="check-title">Coolant System</div><div class="check-desc">Tank level, hose condition, radiator fins</div></div><button class="btn-check" id="ckbtn-coolant_system" onclick="openWAModal('coolant_system','Coolant System')">Inspect</button></div>
+            </div>
+        </div>
+
+        <div style="text-align:right;margin-top:8px">
+            <button class="btn-secondary" onclick="switchTab('report')">Generate Report →</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════ -->
+    <!-- PARTS TAB                           -->
+    <!-- ═══════════════════════════════════ -->
+    <div id="tab-parts" class="tab-pane">
+        <div class="card">
+            <div class="card-header">Part Identification</div>
+            <p style="font-size:13.5px;color:var(--text-2);margin-bottom:16px;line-height:1.6">Photograph any Cat part. We'll identify it, assess its condition, and pull service information.</p>
+            <div class="upload-zone" onclick="document.getElementById('part-photo-input').click()">
+                <div id="part-photo-placeholder">
+                    <svg class="upload-icon" width="44" height="44" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <div class="upload-label">Photograph the part</div>
+                    <div class="upload-sub">Filters, seals, hoses, ground engaging tools</div>
+                </div>
+                <img id="part-photo-preview" style="display:none">
+            </div>
+            <input type="file" id="part-photo-input" accept="image/*" capture="environment">
+            <div class="field" style="margin-top:14px">
+                <label>Equipment</label>
+                <select id="part-equipment-model">
+                    <option value="CAT 320">CAT 320</option><option value="CAT 336">CAT 336</option>
+                    <option value="CAT 349">CAT 349</option><option value="CAT 950">CAT 950</option>
+                    <option value="CAT 966">CAT 966</option><option value="CAT D6">CAT D6</option>
+                    <option value="CAT D8">CAT D8</option><option value="CAT 740">CAT 740</option>
+                    <option value="CAT 777">CAT 777</option>
+                </select>
+            </div>
+            <button class="btn-primary" id="part-submit-btn" onclick="identifyPart()" disabled>Identify Part</button>
+        </div>
+        <div id="parts-result"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════ -->
+    <!-- NAMEPLATE TAB                       -->
+    <!-- ═══════════════════════════════════ -->
+    <div id="tab-ocr" class="tab-pane">
+        <div class="card">
+            <div class="card-header">Read Serial Plate</div>
+            <p style="font-size:13.5px;color:var(--text-2);margin-bottom:16px;line-height:1.6">Photograph any equipment nameplate or serial plate. We'll read the serial number, model, and date codes.</p>
+            <div class="upload-zone" onclick="document.getElementById('ocr-photo-input').click()">
+                <div id="ocr-placeholder">
+                    <svg class="upload-icon" width="44" height="44" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    <div class="upload-label">Photograph the nameplate</div>
+                    <div class="upload-sub">Serial plate, component tag, identification label</div>
+                </div>
+                <img id="ocr-preview" style="display:none">
+            </div>
+            <input type="file" id="ocr-photo-input" accept="image/*" capture="environment">
+            <div class="field" style="margin-top:14px">
+                <label>Equipment (optional context)</label>
+                <select id="ocr-equipment">
+                    <option value="">Unknown</option>
+                    <option value="CAT 320">CAT 320</option><option value="CAT 336">CAT 336</option>
+                    <option value="CAT 349">CAT 349</option><option value="CAT 950">CAT 950</option>
+                    <option value="CAT 966">CAT 966</option><option value="CAT D6">CAT D6</option>
+                    <option value="CAT D8">CAT D8</option><option value="CAT 740">CAT 740</option>
+                </select>
+            </div>
+            <button class="btn-primary" id="ocr-submit-btn" onclick="submitOcr()" disabled>Read Nameplate</button>
+        </div>
+        <div id="ocr-result"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════ -->
+    <!-- REPORT TAB                          -->
+    <!-- ═══════════════════════════════════ -->
+    <div id="tab-report" class="tab-pane">
+        <div class="card">
+            <div class="card-header">Inspection Report</div>
+            <p style="font-size:13.5px;color:var(--text-2);margin-bottom:18px;line-height:1.6">Generate a professional inspection report from this session's findings.</p>
+            <div id="findings-list">
+                <p style="font-size:13.5px;color:var(--text-3);padding:12px 0">No findings recorded yet — run inspections first.</p>
+            </div>
+            <div class="btn-row">
+                <button class="btn-primary" id="gen-report-btn" onclick="generateReport()" disabled>Generate Report</button>
+                <button class="btn-secondary" onclick="window.print()">Print / Export PDF</button>
+            </div>
+        </div>
+        <div id="report-output"></div>
+    </div>
+
+</div><!-- /page -->
+
+<!-- Walkaround Modal -->
+<div class="modal-backdrop" id="wa-modal">
+    <div class="modal">
+        <button class="modal-close" onclick="closeWAModal()">×</button>
+        <h2 id="wa-modal-title" style="font-size:18px;font-weight:700;margin-bottom:18px"></h2>
+        <div class="upload-zone" onclick="document.getElementById('wa-photo-input').click()" style="margin-bottom:14px;min-height:160px">
+            <div id="wa-photo-placeholder">
+                <svg class="upload-icon" width="36" height="36" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <div class="upload-label">Take a photo</div>
+            </div>
+            <img id="wa-preview" style="display:none;max-height:220px">
+        </div>
+        <input type="file" id="wa-photo-input" accept="image/*" capture="environment">
+        <div class="voice-row" style="margin-bottom:10px">
+            <button class="btn-voice" id="wa-voice-btn" onclick="toggleVoice('wa-voice-btn','wa-transcript','wa-voice-status')">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                Record
+            </button>
+            <span id="wa-voice-status" class="voice-status"></span>
+        </div>
+        <textarea id="wa-transcript" placeholder="Describe what you observe…" style="margin-bottom:14px;min-height:60px"></textarea>
+        <div id="wa-result"></div>
+        <button class="btn-primary" id="wa-submit-btn" onclick="submitWA()" disabled style="margin-top:8px">Analyze</button>
+    </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// State
+// ══════════════════════════════════════
+const sessionFindings = [];
+let waCurrentComp = null;
+let waCompleted = 0;
+const WA_TOTAL = 12;
+
+// ══════════════════════════════════════
+// Tabs
+// ══════════════════════════════════════
+document.querySelectorAll('.nav-tab').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+function switchTab(id) {
+    document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    const btn = document.querySelector(`.nav-tab[data-tab="${id}"]`);
+    if (btn) btn.classList.add('active');
+    const pane = document.getElementById('tab-' + id);
+    if (pane) pane.classList.add('active');
+    if (id === 'report') updateReportTab();
+}
+
+// ══════════════════════════════════════
+// Fleet count
+// ══════════════════════════════════════
+async function refreshFleetCount() {
+    try {
+        const r = await fetch('/api/memory-stats');
+        if (!r.ok) return;
+        const d = await r.json();
+        const n = d.total_inspections || 0;
+        document.getElementById('fleet-count').textContent = `${n} inspection${n !== 1 ? 's' : ''}`;
+    } catch {}
+}
+refreshFleetCount();
+
+// ══════════════════════════════════════
+// Maintenance Preview
+// ══════════════════════════════════════
+let _maintDebounce;
+function updateMaintPreview() {
+    clearTimeout(_maintDebounce);
+    _maintDebounce = setTimeout(async () => {
+        const hrs = parseInt(document.getElementById('equipment-hours').value) || 0;
+        try {
+            const r = await fetch(`/api/maintenance-schedule?hours=${hrs}`);
+            const d = await r.json();
+            const ns = d.next_service || {};
+            const urg = d.urgency || 'normal';
+            const cls = urg === 'imminent' ? 'pm-imminent' : urg === 'approaching' ? 'pm-approaching' : 'pm-normal';
+            const icon = urg === 'imminent' ? '⚠️' : urg === 'approaching' ? '🔔' : 'ℹ️';
+            document.getElementById('maint-preview').innerHTML = `
+                <div class="pm-chip ${cls}">
+                    <span class="pm-icon">${icon}</span>
+                    <div>
+                        <div class="pm-label">${ns.name || '?'} due at ${(ns.due_at_hours||0).toLocaleString()} hrs &nbsp;·&nbsp; ${ns.hours_remaining || 0} hrs remaining</div>
+                        <div class="pm-detail">${ns.tasks || ''}</div>
+                    </div>
+                </div>`;
+        } catch { document.getElementById('maint-preview').innerHTML = ''; }
+    }, 400);
+}
+document.getElementById('equipment-hours').addEventListener('input', updateMaintPreview);
+document.getElementById('equipment-model').addEventListener('change', updateMaintPreview);
+updateMaintPreview();
+
+// ══════════════════════════════════════
+// Photo Upload
+// ══════════════════════════════════════
+function setupPhotoInput(inputId, previewId, placeholderId, hintId, btnId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.addEventListener('change', () => {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            const prev = document.getElementById(previewId);
+            const ph = document.getElementById(placeholderId);
+            if (prev) { prev.src = e.target.result; prev.style.display = 'block'; }
+            if (ph) ph.style.display = 'none';
+            if (hintId) { const h = document.getElementById(hintId); if (h) h.style.display = 'block'; }
+            if (btnId) { const b = document.getElementById(btnId); if (b) b.disabled = false; }
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // Drag & drop
+    const zone = input.previousElementSibling || document.getElementById('photo-area');
+    if (zone) {
+        zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--yellow)'; });
+        zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
+        zone.addEventListener('drop', e => {
+            e.preventDefault(); zone.style.borderColor = '';
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files;
+                input.dispatchEvent(new Event('change'));
+            }
+        });
+    }
+}
+setupPhotoInput('photo-input', 'photo-preview', 'photo-placeholder', 'photo-change-hint', 'submit-btn');
+setupPhotoInput('part-photo-input', 'part-photo-preview', 'part-photo-placeholder', null, 'part-submit-btn');
+setupPhotoInput('ocr-photo-input', 'ocr-preview', 'ocr-placeholder', null, 'ocr-submit-btn');
+setupPhotoInput('wa-photo-input', 'wa-preview', 'wa-photo-placeholder', null, 'wa-submit-btn');
+
+// ══════════════════════════════════════
+// Voice
+// ══════════════════════════════════════
+let _recognition = null;
+function toggleVoice(btnId, transcriptId, statusId) {
+    const btn = document.getElementById(btnId);
+    const status = document.getElementById(statusId);
+    if (_recognition) { _recognition.stop(); return; }
+    const SR = window.webkitSpeechRecognition || window.SpeechRecognition;
+    if (!SR) { if (status) status.textContent = 'Voice not supported in this browser'; return; }
+    _recognition = new SR();
+    _recognition.continuous = true; _recognition.interimResults = true; _recognition.lang = 'en-US';
+    _recognition.onstart = () => { btn.classList.add('recording'); btn.querySelector('svg').style.color = '#fff'; if (status) status.textContent = 'Recording…'; };
+    _recognition.onresult = e => {
+        let t = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) t += e.results[i][0].transcript;
+        document.getElementById(transcriptId).value = t;
+    };
+    _recognition.onend = () => { _recognition = null; btn.classList.remove('recording'); btn.querySelector('svg').style.color = ''; if (status) status.textContent = ''; };
+    _recognition.onerror = e => { _recognition = null; btn.classList.remove('recording'); if (status) status.textContent = 'Microphone error'; };
+    _recognition.start();
+}
+
+// ══════════════════════════════════════
+// Main Inspection Submit
+// ══════════════════════════════════════
+async function submitInspection() {
+    const photoFile = document.getElementById('photo-input').files[0];
+    if (!photoFile) return;
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2.5px;margin:0"></div>&nbsp; Analyzing…';
+
+    const resultsArea = document.getElementById('results-area');
+    resultsArea.style.display = 'block';
+    document.getElementById('result-hero').innerHTML = `<div class="spinner-wrap"><div class="spinner"></div><div class="spinner-label">Analyzing image…</div></div>`;
+    ['alerts-area','result-body-card','compliance-area','fleet-note-area','similar-area','store-bar-area'].forEach(id => { document.getElementById(id).innerHTML = ''; });
+
+    const fd = new FormData();
+    fd.append('photo', photoFile);
+    fd.append('component', document.getElementById('component').value);
+    fd.append('equipment_model', document.getElementById('equipment-model').value);
+    fd.append('equipment_hours', document.getElementById('equipment-hours').value);
+    fd.append('voice_transcript', document.getElementById('voice-transcript').value);
+
+    try {
+        const resp = await fetch('/api/inspect', { method: 'POST', body: fd });
+        const data = await resp.json();
+
+        if (resp.status === 422 && data.error === 'invalid_image') {
+            document.getElementById('result-hero').innerHTML = `
+                <div class="invalid-card">
+                    <div class="invalid-icon">📷</div>
+                    <div class="invalid-title">Not an equipment photo</div>
+                    <div class="invalid-body">The image appears to show <strong>${data.detected_subject || 'a non-equipment subject'}</strong>.<br>Please photograph actual equipment or a component.</div>
+                </div>`;
+            return;
+        }
+
+        renderResult(data);
+        sessionFindings.push({ component: data.analysis?.detected_component || document.getElementById('component').value, model: document.getElementById('equipment-model').value, hours: document.getElementById('equipment-hours').value, rating: data.analysis?.rating, finding: data.analysis?.finding, });
+        updateReportTab();
+        refreshFleetCount();
+        document.getElementById('result-hero').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (err) {
+        document.getElementById('result-hero').innerHTML = `<div class="invalid-card"><div class="invalid-title">Connection error</div><div class="invalid-body">${err.message}</div></div>`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Analyze Inspection';
+    }
+}
+
+// ══════════════════════════════════════
+// Render Result
+// ══════════════════════════════════════
+function renderResult(d) {
+    const a = d.analysis || {};
+    const rating = a.rating || 'YELLOW';
+
+    // ── Rating labels
+    const ratingLabels = { RED: 'Critical — Action Required', YELLOW: 'Monitor / Schedule Repair', GREEN: 'Satisfactory' };
+    const ratingIcons  = { RED: '🔴', YELLOW: '🟡', GREEN: '🟢' };
+    const comp = (a.detected_component || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Component';
+    const conf = Math.round((a.confidence || 0) * 100);
+    const sev = a.severity_score || 0;
+
+    // ── Hero Banner
+    document.getElementById('result-hero').innerHTML = `
+        <div class="result-banner ${rating}">
+            <div class="result-rating-dot">${ratingIcons[rating]}</div>
+            <div class="result-rating-info">
+                <div class="result-rating-label">${ratingLabels[rating] || rating}</div>
+                <div class="result-rating-sub">${comp} &nbsp;·&nbsp; ${conf}% confidence</div>
+            </div>
+            ${sev >= 7 ? `<div class="result-severity-badge">Severity ${sev}/10</div>` : ''}
+        </div>`;
+
+    // ── Alerts (escalation, trend, maintenance)
+    let alertsHtml = '';
+    if (a.escalation_warning && a.escalation_warning.toLowerCase() !== 'none') {
+        alertsHtml += `<div class="alert alert-escalation"><strong>⚠ Escalation Risk</strong><div class="alert-body">${a.escalation_warning}</div></div>`;
+    }
+    if (a.condition_trend && !a.condition_trend.startsWith('No previous')) {
+        alertsHtml += `<div class="alert alert-trend"><strong>📈 Condition Trend</strong><div class="alert-body">${a.condition_trend}</div></div>`;
+    }
+    if (d.maintenance_due) {
+        const ns = d.maintenance_due.next_service || {};
+        const urg = d.maintenance_due.urgency || 'normal';
+        const urgClass = urg === 'imminent' ? 'urgent' : '';
+        alertsHtml += `<div class="alert alert-maint ${urgClass}"><strong>🔧 Service Due</strong><div class="alert-body">${ns.name || '?'} at ${(ns.due_at_hours||0).toLocaleString()} hrs (${ns.hours_remaining || 0} hrs remaining)</div></div>`;
+    }
+    document.getElementById('alerts-area').innerHTML = alertsHtml;
+
+    // ── Body Card: Finding + Action + Cost
+    let costHtml = '';
+    if (a.cost_estimate && a.cost_estimate !== 'N/A') {
+        costHtml = `<div style="margin-top:14px"><div class="result-label">Estimated cost & downtime</div><span class="cost-chip">💰 ${a.cost_estimate}</span></div>`;
+    }
+    let reasoningHtml = '';
+    if (a.reasoning) {
+        reasoningHtml = `<div class="result-section" style="margin-top:14px"><div class="result-label">Reasoning</div><div class="result-text" style="color:var(--text-2);font-size:13.5px">${a.reasoning}</div></div>`;
+    }
+    let historyHtml = '';
+    if (a.historical_context && !a.historical_context.startsWith('No matching')) {
+        historyHtml = `<div class="result-section" style="margin-top:14px"><div class="result-label">Historical context</div><div class="result-text" style="color:var(--text-2);font-size:13.5px">${a.historical_context}</div></div>`;
+    }
+
+    document.getElementById('result-body-card').innerHTML = `
+        <div class="card">
+            <div class="result-section">
+                <div class="result-label">What was found</div>
+                <div class="result-text">${a.finding || '—'}</div>
+            </div>
+            <div class="result-section">
+                <div class="result-label">Required action</div>
+                <div class="result-text">${a.action || '—'}</div>
+            </div>
+            ${costHtml}
+            ${reasoningHtml}
+            ${historyHtml}
+        </div>`;
+
+    // ── Compliance
+    if (a.compliance_flag) {
+        const cf = a.compliance_flag;
+        document.getElementById('compliance-area').innerHTML = `
+            <div class="compliance-card">
+                <div class="compliance-title">⚖ Regulatory Compliance</div>
+                <div class="compliance-citation">${cf.regulation || ''}</div>
+                <div class="compliance-action">${cf.description || ''}<br><strong style="color:var(--text-1)">${cf.action_required || ''}</strong></div>
+            </div>`;
+    }
+
+    // ── Fleet Pattern Note
+    if (a.fleet_pattern_note && a.fleet_pattern_note.length > 10) {
+        document.getElementById('fleet-note-area').innerHTML = `
+            <div class="fleet-note">
+                <div class="fleet-note-label">Fleet Pattern</div>
+                <div class="fleet-note-text">${a.fleet_pattern_note}</div>
+            </div>`;
+    }
+
+    // ── Similar Findings
+    renderSimilarCases(d);
+
+    // ── Store bar
+    if (d.inspection_id) {
+        document.getElementById('store-bar-area').innerHTML = `
+            <div class="store-bar">✓ Inspection #${d.inspection_id} saved &nbsp;·&nbsp; Every inspection makes the next one smarter</div>`;
+    }
+}
+
+// ══════════════════════════════════════
+// Similar Cases
+// ══════════════════════════════════════
+function renderSimilarCases(d) {
+    const cases = d.similar_cases || [];
+    if (!cases.length) {
+        document.getElementById('similar-area').innerHTML = '';
+        return;
+    }
+    const model = document.getElementById('equipment-model').value;
+    let html = `<div class="card">
+        <div class="similar-header">
+            <span>Similar Findings</span>
+            <span class="similar-count">${cases.length} match${cases.length !== 1 ? 'es' : ''}</span>
+        </div>`;
+
+    // Escalation timeline
+    const timeline = buildEscTimeline(cases);
+    if (timeline.length > 1) {
+        html += `<div style="margin-bottom:16px"><div class="result-label" style="margin-bottom:8px">Progression seen in similar cases</div><div class="esc-timeline">`;
+        timeline.forEach(step => {
+            html += `<div class="esc-step"><div class="esc-dot ${step.rating}"></div><div class="esc-text">${step.hours.toLocaleString()} hrs<br>${step.rating}</div></div>`;
+        });
+        html += `</div></div>`;
+    }
+
+    cases.slice(0, 5).forEach(c => {
+        const p = c.payload || {};
+        const r = p.rating || 'YELLOW';
+        const isSameMachine = (p.equipment_model === model);
+        html += `
+            <div class="similar-card ${isSameMachine ? 'this-machine' : ''}">
+                <div class="similar-card-top">
+                    <div class="similar-machine">
+                        ${p.equipment_model || '?'} &nbsp;·&nbsp; ${(p.hours||0).toLocaleString()} hrs
+                        ${isSameMachine ? '<span class="this-machine-tag">Same model</span>' : ''}
+                    </div>
+                    <span><span class="rating-dot-sm ${r}"></span>${r}</span>
+                </div>
+                <div class="similar-finding">${(p.finding || '').slice(0, 120)}${(p.finding||'').length > 120 ? '…' : ''}</div>
+                ${p.action ? `<div class="similar-outcome" style="margin-top:4px">Action: ${p.action.slice(0,100)}${p.action.length > 100 ? '…' : ''}</div>` : ''}
+                ${p.outcome ? `<div class="similar-outcome">Outcome: ${p.outcome.replace(/_/g,' ')}</div>` : ''}
+            </div>`;
+    });
+    html += `</div>`;
+    document.getElementById('similar-area').innerHTML = html;
+}
+
+function buildEscTimeline(cases) {
+    const order = { GREEN: 0, YELLOW: 1, RED: 2 };
+    return [...cases]
+        .filter(c => c.payload?.hours && c.payload?.rating)
+        .sort((a, b) => a.payload.hours - b.payload.hours)
+        .map(c => ({ rating: c.payload.rating, hours: c.payload.hours }))
+        .slice(0, 5);
+}
+
+// ══════════════════════════════════════
+// Walkaround
+// ══════════════════════════════════════
+function toggleChecklist(btn) {
+    const items = btn.nextElementSibling;
+    const isOpen = items.classList.toggle('open');
+    btn.querySelector('.chevron').style.transform = isOpen ? 'rotate(180deg)' : '';
+}
+function updateWAProgress() {
+    const pct = Math.round((waCompleted / WA_TOTAL) * 100);
+    document.getElementById('wa-fill').style.width = pct + '%';
+    document.getElementById('wa-count').textContent = `${waCompleted}/${WA_TOTAL}`;
+}
+
+function openWAModal(compId, compLabel) {
+    waCurrentComp = compId;
+    document.getElementById('wa-modal-title').textContent = compLabel;
+    document.getElementById('wa-transcript').value = '';
+    document.getElementById('wa-result').innerHTML = '';
+    document.getElementById('wa-submit-btn').disabled = true;
+    const prev = document.getElementById('wa-preview');
+    prev.src = ''; prev.style.display = 'none';
+    document.getElementById('wa-photo-placeholder').style.display = 'flex';
+    document.getElementById('wa-photo-input').value = '';
+    document.getElementById('wa-modal').classList.add('open');
+}
+function closeWAModal() { document.getElementById('wa-modal').classList.remove('open'); }
+
+async function submitWA() {
+    const photoFile = document.getElementById('wa-photo-input').files[0];
+    if (!photoFile) return;
+    const btn = document.getElementById('wa-submit-btn');
+    btn.disabled = true; btn.textContent = 'Analyzing…';
+    document.getElementById('wa-result').innerHTML = `<div class="spinner-wrap" style="padding:20px 0"><div class="spinner"></div></div>`;
+
+    const fd = new FormData();
+    fd.append('photo', photoFile);
+    fd.append('component', waCurrentComp);
+    fd.append('equipment_model', document.getElementById('equipment-model')?.value || 'CAT 320');
+    fd.append('equipment_hours', document.getElementById('equipment-hours')?.value || '0');
+    fd.append('voice_transcript', document.getElementById('wa-transcript').value);
+
+    try {
+        const resp = await fetch('/api/inspect', { method: 'POST', body: fd });
+        const data = await resp.json();
+        if (resp.status === 422 && data.error === 'invalid_image') {
+            document.getElementById('wa-result').innerHTML = `<div class="invalid-card" style="padding:16px;text-align:left"><div class="invalid-title">Not an equipment photo</div><div class="invalid-body">Please photograph the actual ${waCurrentComp.replace(/_/g,' ')}.</div></div>`;
+            return;
+        }
+        const a = data.analysis || {};
+        const r = a.rating || 'YELLOW';
+        const ratingLabels = { RED: 'Critical', YELLOW: 'Monitor', GREEN: 'Satisfactory' };
+        document.getElementById('wa-result').innerHTML = `
+            <div class="result-banner ${r}" style="margin-bottom:10px">
+                <div class="result-rating-dot" style="width:36px;height:36px;font-size:16px">${r === 'RED' ? '🔴' : r === 'YELLOW' ? '🟡' : '🟢'}</div>
+                <div class="result-rating-info">
+                    <div class="result-rating-label" style="font-size:16px">${ratingLabels[r] || r}</div>
+                    <div class="result-rating-sub">${(a.finding||'').slice(0,80)}${(a.finding||'').length>80?'…':''}</div>
+                </div>
+            </div>
+            <div style="font-size:13px;color:var(--text-2);line-height:1.5;margin-bottom:10px">${a.action || ''}</div>
+            ${a.compliance_flag ? `<div class="compliance-card"><div class="compliance-title">⚖ Compliance</div><div class="compliance-citation">${a.compliance_flag.regulation}</div><div class="compliance-action">${a.compliance_flag.action_required}</div></div>` : ''}`;
+
+        // Update dot
+        const dot = document.getElementById('dot-' + waCurrentComp);
+        const ckbtn = document.getElementById('ckbtn-' + waCurrentComp);
+        if (dot && !dot.classList.contains(r)) {
+            dot.className = 'status-dot ' + r;
+            waCompleted++;
+            updateWAProgress();
+        }
+        if (ckbtn) { ckbtn.textContent = r === 'GREEN' ? '✓ Done' : r === 'RED' ? '✗ Flag' : '○ Monitor'; ckbtn.className = 'btn-check done'; }
+        sessionFindings.push({ component: waCurrentComp, model: document.getElementById('equipment-model')?.value || '', hours: document.getElementById('equipment-hours')?.value || '0', rating: r, finding: a.finding });
+        refreshFleetCount();
+    } catch (err) {
+        document.getElementById('wa-result').innerHTML = `<div class="invalid-card" style="padding:14px"><div class="invalid-body">${err.message}</div></div>`;
+    } finally {
+        btn.disabled = false; btn.textContent = 'Analyze';
+    }
+}
+
+// ══════════════════════════════════════
+// Parts Identification
+// ══════════════════════════════════════
+async function identifyPart() {
+    const file = document.getElementById('part-photo-input').files[0];
+    if (!file) return;
+    const btn = document.getElementById('part-submit-btn');
+    btn.disabled = true; btn.textContent = 'Identifying…';
+    document.getElementById('parts-result').innerHTML = `<div class="spinner-wrap"><div class="spinner"></div><div class="spinner-label">Identifying part…</div></div>`;
+
+    const fd = new FormData();
+    fd.append('photo', file);
+    fd.append('equipment_model', document.getElementById('part-equipment-model').value);
+    try {
+        const resp = await fetch('/api/identify-part', { method: 'POST', body: fd });
+        const d = await resp.json();
+        if (d.error) { document.getElementById('parts-result').innerHTML = `<div class="invalid-card"><div class="invalid-body">${d.error}</div></div>`; return; }
+        const condColor = { new: 'var(--green)', serviceable: 'var(--blue)', worn: 'var(--amber)', damaged: 'var(--red)', failed: 'var(--red)' };
+        document.getElementById('parts-result').innerHTML = `
+            <div class="card" style="animation:fadeUp .25s ease">
+                <div class="card-header">Identified Part</div>
+                <div class="result-section">
+                    <div class="result-label">Part</div>
+                    <div class="result-text" style="font-weight:700;font-size:17px">${d.part_name || '—'}</div>
+                    ${d.part_number && d.part_number !== 'Not in catalog' ? `<div style="font-size:13px;color:var(--text-3);margin-top:3px">P/N ${d.part_number}</div>` : ''}
+                </div>
+                <div class="result-section">
+                    <div class="result-label">Condition</div>
+                    <div class="result-text" style="color:${condColor[d.condition?.toLowerCase()] || 'inherit'};font-weight:600">${d.condition || '—'}</div>
+                </div>
+                ${d.compatible_models?.length ? `<div class="result-section"><div class="result-label">Compatible Models</div><div class="result-text">${d.compatible_models.join(', ')}</div></div>` : ''}
+                <div class="result-section">
+                    <div class="result-label">Service Recommendation</div>
+                    <div class="result-text">${d.recommendation || '—'}</div>
+                </div>
+                ${d.service_info ? `<div style="margin-top:10px;font-size:13px;color:var(--text-2);border-top:1px solid var(--border);padding-top:10px">${d.service_info}</div>` : ''}
+            </div>`;
+    } catch (err) {
+        document.getElementById('parts-result').innerHTML = `<div class="invalid-card"><div class="invalid-body">${err.message}</div></div>`;
+    } finally {
+        btn.disabled = false; btn.textContent = 'Identify Part';
+    }
+}
+
+// ══════════════════════════════════════
+// Nameplate OCR
+// ══════════════════════════════════════
+async function submitOcr() {
+    const file = document.getElementById('ocr-photo-input').files[0];
+    if (!file) return;
+    const btn = document.getElementById('ocr-submit-btn');
+    btn.disabled = true; btn.textContent = 'Reading…';
+    document.getElementById('ocr-result').innerHTML = `<div class="spinner-wrap"><div class="spinner"></div><div class="spinner-label">Reading nameplate…</div></div>`;
+
+    const fd = new FormData();
+    fd.append('photo', file);
+    fd.append('equipment_model', document.getElementById('ocr-equipment').value);
+    try {
+        const resp = await fetch('/api/ocr', { method: 'POST', body: fd });
+        const raw = await resp.json();
+        const d = raw.ocr_result || raw;
+        if (d.error) { document.getElementById('ocr-result').innerHTML = `<div class="invalid-card"><div class="invalid-body">${d.error}</div></div>`; return; }
+        const conf = Math.round((d.confidence || 0) * 100);
+        const rows = [
+            ['Serial Number', d.serial_number], ['Model', d.model_number],
+            ['Date Code', d.date_code], ['Part Number', d.part_number],
+            ['Additional', d.additional_text], ['Plate Condition', d.plate_condition],
+        ].filter(([,v]) => v && v !== 'Not visible' && v !== 'N/A');
+        document.getElementById('ocr-result').innerHTML = `
+            <div class="card" style="animation:fadeUp .25s ease">
+                <div class="card-header">Nameplate Data &nbsp;·&nbsp; ${conf}% confidence</div>
+                ${rows.map(([k,v]) => `<div class="ocr-row"><span class="ocr-key">${k}</span><span class="ocr-val">${v}</span></div>`).join('')}
+                ${d.additional_text ? `<div style="margin-top:12px;font-size:12.5px;color:var(--text-3);border-top:1px solid var(--border);padding-top:10px">All readable text: ${d.additional_text}</div>` : ''}
+            </div>`;
+    } catch (err) {
+        document.getElementById('ocr-result').innerHTML = `<div class="invalid-card"><div class="invalid-body">${err.message}</div></div>`;
+    } finally {
+        btn.disabled = false; btn.textContent = 'Read Nameplate';
+    }
+}
+
+// ══════════════════════════════════════
+// Report
+// ══════════════════════════════════════
+function updateReportTab() {
+    const btn = document.getElementById('gen-report-btn');
+    if (!btn) return;
+    btn.disabled = sessionFindings.length === 0;
+    if (!sessionFindings.length) {
+        document.getElementById('findings-list').innerHTML = `<p style="font-size:13.5px;color:var(--text-3);padding:12px 0">No findings recorded yet — run inspections first.</p>`;
+        return;
+    }
+    const ratingColors = { RED: 'var(--red)', YELLOW: 'var(--amber)', GREEN: 'var(--green)' };
+    document.getElementById('findings-list').innerHTML = sessionFindings.map((f, i) => `
+        <div class="finding-row">
+            <span class="rating-dot-sm ${f.rating || 'YELLOW'}"></span>
+            <div>
+                <div class="f-component">${(f.component||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())} &nbsp;·&nbsp; ${f.model} @ ${parseInt(f.hours||0).toLocaleString()} hrs</div>
+                <div class="f-detail">${(f.finding||'').slice(0,80)}${(f.finding||'').length>80?'…':''}</div>
+            </div>
+        </div>`).join('');
+}
+
+async function generateReport() {
+    if (!sessionFindings.length) return;
+    const btn = document.getElementById('gen-report-btn');
+    btn.disabled = true; btn.textContent = 'Generating…';
+    document.getElementById('report-output').innerHTML = `<div class="spinner-wrap"><div class="spinner"></div><div class="spinner-label">Generating report…</div></div>`;
+
+    const model = document.getElementById('equipment-model')?.value || 'CAT 320';
+    const hours = parseInt(document.getElementById('equipment-hours')?.value || '0');
+    try {
+        const resp = await fetch('/api/generate-report', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ findings: sessionFindings, equipment_model: model, equipment_hours: hours })
+        });
+        const d = await resp.json();
+        document.getElementById('report-output').innerHTML = `<div class="card" style="animation:fadeUp .25s ease">${d.report || d.error || 'No report generated.'}</div>`;
+    } catch (err) {
+        document.getElementById('report-output').innerHTML = `<div class="invalid-card"><div class="invalid-body">${err.message}</div></div>`;
+    } finally {
+        btn.disabled = false; btn.textContent = 'Generate Report';
+    }
+}
+
+// ══════════════════════════════════════
+// Reset Memory
+// ══════════════════════════════════════
+async function resetMemory() {
+    if (!confirm('Clear all inspections from this session? Seed data (training examples) will be kept.')) return;
+    try {
+        const resp = await fetch('/api/reset-inspections', { method: 'POST' });
+        if (resp.ok) {
+            sessionFindings.length = 0;
+            waCompleted = 0;
+            updateWAProgress();
+            updateReportTab();
+            refreshFleetCount();
+        }
+    } catch (err) { alert('Reset failed: ' + err.message); }
+}
+</script>
+</body>
+</html>
